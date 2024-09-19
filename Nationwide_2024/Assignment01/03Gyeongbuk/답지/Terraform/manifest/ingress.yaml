@@ -1,0 +1,59 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wsi-ingress
+  namespace: wsi
+  annotations:
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/group.name: wsi-tg
+    alb.ingress.kubernetes.io/healthcheck-path: /healthcheck
+    alb.ingress.kubernetes.io/load-balancer-name: wsi-app-alb
+    alb.ingress.kubernetes.io/security-groups: wsi-app-alb-sg
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    kubernetes.io/ingress.class: alb
+    # Conditions for customer-service
+    alb.ingress.kubernetes.io/conditions.customer-service: >
+      [{"Field":"http-header","HttpHeaderConfig":{"HttpHeaderName":"X-wsi-header","Values":["Skills2024"]}}]
+    # Conditions for product-service
+    alb.ingress.kubernetes.io/conditions.product-service: >
+      [{"Field":"http-header","HttpHeaderConfig":{"HttpHeaderName":"X-wsi-header","Values":["Skills2024"]}}]
+    # Conditions for order-service
+    alb.ingress.kubernetes.io/conditions.order-service: >
+      [{"Field":"http-header","HttpHeaderConfig":{"HttpHeaderName":"X-wsi-header","Values":["Skills2024"]}}]
+    # Default rule path
+    alb.ingress.kubernetes.io/actions.default-rule: >-
+      {"type":"fixed-response","fixedResponseConfig":{"contentType":"text/plain","statusCode":"403","messageBody":"Access Denied"}}
+
+spec:
+  # Default backend service
+  defaultBackend:
+    service:
+      name: default-rule 
+      port:
+        name: use-annotation
+          # Rules for different paths
+  rules:
+    - http:
+        paths:
+          - path: /v1/customer
+            pathType: Prefix
+            backend:
+              service:
+                name: customer-service
+                port:
+                  number: 80
+          - path: /v1/product
+            pathType: Prefix
+            backend:
+              service:
+                name: product-service
+                port:
+                  number: 80
+          - path: /v1/order
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  number: 80

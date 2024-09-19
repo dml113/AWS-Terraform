@@ -1,0 +1,3 @@
+image:
+  repository: <ACCOUNT_ID>.dkr.ecr.ap-northeast-2.amazonaws.com/wsc2024-ecr
+  tag: latest

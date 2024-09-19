@@ -1,0 +1,3 @@
+aws dynamodb put-item \
+    --table-name gm-db \
+    --item '{"PK": {"S": "partition_key_value"}, "SK": {"S": "sort_key_value"}, "Attribute1": {"S": "gm"}, "Attribute2": {"S": "st"}}'

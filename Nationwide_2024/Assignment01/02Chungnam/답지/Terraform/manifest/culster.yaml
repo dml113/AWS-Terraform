@@ -1,0 +1,71 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+metadata:
+  name: wsc2024-eks-cluster
+  version: "1.29"
+  region: us-east-1
+  annotations:
+    eks.amazonaws.com/encryption-config: |
+      [
+        {
+          "resources": ["secrets"],
+          "provider": {
+            "keyArn": "arn:aws:kms:us-east-1:950274644703:key/ac0d6ab5-9d62-4b32-88ed-38843d04c3ae"
+          }
+        }
+      ]
+vpc:
+  id: vpc-0db6efdcea7596a76
+  subnets:
+    private:
+      private-a: { id: subnet-047b0b51ffb541ad6 }
+      private-b: { id: subnet-061a589eac4c9778b }
+      
+iamIdentityMappings:
+  - arn: arn:aws:iam::950274644703:role/root # kubectl edit configmap aws-auth -n kube-system
+    groups:                                  # edit to arn:aws:iam::950274644703:role/root -> arn:aws:iam::950274644703:root
+      - system:masters
+    username: root-admin
+iam:
+  withOIDC: true
+  serviceAccounts:
+  - metadata:
+      name: aws-load-balancer-controller
+      namespace: kube-system
+    wellKnownPolicies:
+      awsLoadBalancerController: true
+
+managedNodeGroups:
+  - name: wsc2024-db-application-ng
+    labels: { app: db }
+    instanceType: t3.medium
+    instanceName: wsc2024-db-application-node
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 20
+    privateNetworking: true
+    volumeEncrypted: true
+    iam:
+      withAddonPolicies:
+        imageBuilder: true
+        autoScaler: true
+        cloudWatch: true
+      
+  - name: wsc2024-other-ng
+    labels: { app: other }
+    instanceType: t3.medium
+    instanceName: wsc2024-other-node
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 20
+    privateNetworking: true
+    volumeEncrypted: true
+    iam:
+      withAddonPolicies:
+        imageBuilder: true
+        autoScaler: true
+        cloudWatch: true
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["*"]

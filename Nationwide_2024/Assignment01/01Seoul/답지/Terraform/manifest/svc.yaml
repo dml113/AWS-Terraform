@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-svc
+  namespace: wsi
+spec:
+  selector:
+    app: customer
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-svc
+  namespace: wsi
+spec:
+  selector:
+    app: product
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-svc
+  namespace: wsi
+spec:
+  selector:
+    app: order
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP

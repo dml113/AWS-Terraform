@@ -1,0 +1,28 @@
+{
+    "properties": {
+        "@timestamp": {
+        "type": "date"
+      },
+      "clientip": {
+        "type": "ip"
+      },
+      "method": {
+        "type": "keyword"
+      },
+      "path": {
+        "type": "keyword"
+      },
+      "protocol": {
+        "type": "keyword"
+      },
+      "responsecode": {
+        "type": "integer"
+      },
+      "time": {
+        "type": "date"
+      },
+      "useragent": {
+        "type": "keyword"
+      }
+    }
+  }
