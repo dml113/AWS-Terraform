@@ -1,0 +1,96 @@
+resource "aws_lb" "alb" {
+    name = "alb"
+    internal = false
+    load_balancer_type = "application"
+    security_groups = [aws_security_group.elb-sg.id]
+    subnets = [aws_subnet.public_subnet_a.id, aws_subnet.public_subnet_b.id]
+    tags = {
+        Name = "alb"
+    }
+}
+
+resource "aws_lb_target_group" "alb-tg" {
+    name = "alb-tg"
+    port = 80
+    protocol = "HTTP"
+    vpc_id = aws_vpc.vpc.id
+    target_type = "instance"
+}
+
+resource "aws_lb_listener" "alb-listener" {
+    load_balancer_arn = aws_lb.alb.arn 
+    port = 80
+    protocol = "HTTP"
+
+    default_action {
+      type = "forward"
+      target_group_arn = aws_lb_target_group.alb-tg.arn
+    }  
+}
+
+variable "ami" {
+  description = "AMI of the instance"
+  type = string
+  default = "ami-0bfd23bc25c60d5a1"  
+}
+
+variable "size" {
+  description = "type of instance"
+  type = string
+  default = "t3.small"
+}
+
+resource "aws_launch_configuration" "terraform-launconfig" {
+  image_id = var.ami
+  instance_type =   var.size
+  security_groups = [aws_security_group.as-sg.id]
+  user_data =  <<-EOF
+          yum install -y httpd
+          systemctl enable --now httpd
+          echo "private-server" > /var/www/html/index.html 
+          systemctl restart httpd
+          EOF 
+
+  lifecycle {
+  create_before_destroy = true
+}
+}
+
+resource "aws_autoscaling_group" "terraform-asg" {
+  launch_configuration = aws_launch_configuration.terraform-launconfig.name 
+  vpc_zone_identifier = [aws_subnet.private_subnet_a.id, aws_subnet.private_subnet_b.id]
+  min_size = 2
+  max_size = 2 
+
+  tag { 
+    key = "name"
+    value = "teraaform-asg"
+    propagate_at_launch = true 
+  }
+}
+
+# resource "aws_launch_template" "template" {
+#     name_prefix = "test-template"
+#     image_id = var.ami
+#     instance_type = var.size
+#     user_data = base64encode(var.user_data)
+#     vpc_security_group_ids = [aws_security_group.as-sg.id]
+# }
+
+# resource "aws_autoscaling_group" "AS-group" {
+#   availability_zones = ["ap-northeast-2a","ap-northeast-2b"]
+#   desired_capacity = 2
+#   max_size = 2 
+#   min_size = 2
+    
+#   launch_template {
+    
+#     id = aws_launch_template.template.id 
+#     version = "$Latest" 
+#     }
+# }
+
+resource "aws_autoscaling_attachment" "alb-attachment" {
+     autoscaling_group_name = aws_autoscaling_group.terraform-asg.id 
+     lb_target_group_arn = aws_lb_target_group.alb-tg.arn 
+}

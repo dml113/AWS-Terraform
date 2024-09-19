@@ -1,0 +1,57 @@
+resource "random_pet" "bucket_name" {
+  length = 4
+  separator = "-"
+}
+
+resource "aws_s3_bucket" "my_bucket" {
+  bucket = "${random_pet.bucket_name.id}-gmst" # 고유한 버킷 이름으로 변경
+  acl    = "private"
+}
+
+# 로컬 폴더 경로와 S3 프리픽스 설정
+locals {
+  upload_dir = "./application" 
+  s3_prefix  = "test/"
+}
+
+# 파일 업로드
+resource "aws_s3_bucket_object" "upload_files" {
+  for_each = fileset(local.upload_dir, "**/*")
+
+  bucket = aws_s3_bucket.my_bucket.id
+  key    = "${local.s3_prefix}${each.value}"
+  source = "${local.upload_dir}/${each.value}"
+  etag   = filemd5("${local.upload_dir}/${each.value}")
+}
+
+resource "null_resource" "empty_bucket" {
+  provisioner "local-exec" {
+    command = "aws s3 rm s3://${aws_s3_bucket.my_bucket.id} --recursive"
+  }
+
+  triggers = {
+    always_run = "${timestamp()}"
+  }
+
+#   depends_on = [
+#     aws_s3_bucket_object.deployment_upload,
+#     aws_s3_bucket_object.svc_upload,
+#     aws_s3_bucket_object.ingress_upload,
+#     aws_s3_bucket_object.customer_upload,
+#     aws_s3_bucket_object.order_upload,
+#     aws_s3_bucket_object.product_upload,
+#     aws_rds_cluster_instance.aurora_reader,
+#     aws_rds_cluster_instance.aurora_writer,
+#     aws_cloudfront_distribution.my_distribution
+#   ]
+}
+
+resource "null_resource" "delete_bucket" {
+  provisioner "local-exec" {
+    command = "aws s3api delete-bucket --bucket ${aws_s3_bucket.my_bucket.id}"
+  }
+
+  depends_on = [
+    null_resource.empty_bucket,
+  ]
+}
