@@ -18,6 +18,11 @@ variable "private_subnets_cidr" {
   type        = list(string)
 }
 
+# variable "data_subnets_cidr" {
+#   description = "The CIDR blocks for the data subnets"
+#   type        = list(string)
+# }
+
 variable "availability_zones" {
   description = "The availability zones for subnets"
   type        = list(string)
@@ -32,6 +37,11 @@ variable "private_subnet_names" {
   description = "Names for the private subnets"
   type        = list(string)
 }
+
+# variable "data_subnet_names" {
+#   description = "Names for the data subnets"
+#   type        = list(string)
+# }
 
 variable "igw_name" {
   description = "Name for the internet gateway"
@@ -57,3 +67,8 @@ variable "private_route_table_names" {
   description = "Names for the private route tables"
   type        = list(string)
 }
+
+# variable "data_route_table_names" {
+#   description = "Names for the data route tables"
+#   type        = list(string)
+# }

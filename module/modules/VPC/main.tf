@@ -1,9 +1,6 @@
 resource "aws_vpc" "vpc" {
   cidr_block           = var.vpc_cidr
-  enable_dns_support = true
   enable_dns_hostnames = true
-  assign_generated_ipv6_cidr_block = true
-
 
   tags = {
     Name = var.vpc_name
@@ -32,6 +29,17 @@ resource "aws_subnet" "private" {
     Name = var.private_subnet_names[count.index]
   }
 }
+
+# resource "aws_subnet" "data" {
+#   count                = length(var.data_subnets_cidr)
+#   vpc_id               = aws_vpc.vpc.id
+#   cidr_block           = var.data_subnets_cidr[count.index]
+#   availability_zone    = var.availability_zones[count.index]
+
+#   tags = {
+#     Name = var.data_subnet_names[count.index]
+#   }
+# }
 
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.vpc.id
@@ -98,3 +106,18 @@ resource "aws_route_table_association" "private_rt_assoc" {
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private_rt[count.index].id
 }
+
+# resource "aws_route_table" "data_rt" {
+#   count = length(var.data_subnets_cidr)
+#   vpc_id = aws_vpc.vpc.id
+
+#   tags = {
+#     Name = var.data_route_table_names[count.index]
+#   }
+# }
+
+# resource "aws_route_table_association" "data_rt_assoc" {
+#   count          = length(var.data_subnets_cidr)
+#   subnet_id      = aws_subnet.data[count.index].id
+#   route_table_id = aws_route_table.data_rt[count.index].id
+# }

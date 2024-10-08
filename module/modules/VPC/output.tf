@@ -2,6 +2,10 @@ output "vpc_id" {
   value = aws_vpc.vpc.id
 }
 
+output "vpc_cidr" {
+  value = aws_vpc.vpc.cidr_block
+}
+
 output "public_subnet_a_id" {
   value = aws_subnet.public[0].id
 }
@@ -26,6 +30,8 @@ output "private_subnet_ids" {
   value = [for subnet in aws_subnet.private : subnet.id]
 }
 
-output "data_subnet_ids" {
-  value = [for subnet in aws_subnet.data : subnet.id]
-}
+
+
+# output "data_subnet_ids" {
+#   value = [for subnet in aws_subnet.data : subnet.id]
+# }
