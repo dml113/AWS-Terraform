@@ -54,16 +54,38 @@ resource "aws_nat_gateway" "this" {
 }
 
 resource "aws_route" "this" {
-  for_each = var.routes
-  route_table_id         = aws_route_table.this[each.value.rt_name].id
-  destination_cidr_block = each.value.cidr
+  for_each = { for idx, route in var.routes : idx => route }
 
-  gateway_id = lookup(each.value, "gateway_id", null) != null ? each.value.gateway_id : null
+  route_table_id         = aws_route_table.this[each.value.rt_name].id
+  destination_cidr_block = each.value.destination_cidr
+
+  gateway_id = lookup(each.value, "gateway_id", null)
   nat_gateway_id = lookup(each.value, "nat_gateway_key", null) != null ? aws_nat_gateway.this[each.value.nat_gateway_key].id : null
+  transit_gateway_id = lookup(each.value, "transit_gateway_id", null)
 }
 
 resource "aws_route_table_association" "this" {
   for_each = var.subnet_associations
   subnet_id      = aws_subnet.this[each.value.subnet_key].id
   route_table_id = aws_route_table.this[each.value.route_table_key].id
+}
+
+# VPC 엔드포인트 생성
+resource "aws_vpc_endpoint" "this" {
+  for_each = var.vpc_endpoints
+
+  vpc_id       = aws_vpc.this.id
+  service_name = each.value.service_name
+  vpc_endpoint_type = lookup(each.value, "type", "Gateway")
+
+  # 인터페이스 엔드포인트일 경우 서브넷 지정
+  subnet_ids = lookup(each.value, "subnet_keys", null) != null ? [for key in each.value.subnet_keys : aws_subnet.this[key].id] : null
+
+
+  # 게이트웨이 엔드포인트일 경우 라우트 테이블 지정
+  route_table_ids = lookup(each.value, "route_table_keys", null) != null ? [for key in each.value.route_table_keys : aws_route_table.this[key].id] : null
+
+  tags = {
+    Name = each.key
+  }
 }

@@ -40,3 +40,9 @@ variable "key_file_path" {
   type        = string
   default     = "~/.ssh/bastion_key.pem"
 }
+
+variable "user_data" {
+  description = "EC2 User Data"
+  type        = string
+  default     = ""
+}

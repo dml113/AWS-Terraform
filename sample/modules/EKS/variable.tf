@@ -3,6 +3,12 @@ variable "eks_cluster_name" {
   type        = string
 }
 
+variable "eks_addons" {
+  description = "List of EKS addons to enable"
+  type        = list(string)
+  default     = ["kube-proxy", "vpc-cni", "coredns"]
+}
+
 variable "region" {
   description = "The AWS region"
   type        = string
@@ -37,7 +43,6 @@ variable "cluster_private_access" {
 variable "managed_node_groups" {
   description = "List of node group configurations"
   type = list(object({
-    name              = string
     node_name         = string
     nodegroup_name    = string
     instance_type     = string

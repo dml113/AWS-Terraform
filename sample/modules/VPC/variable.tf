@@ -40,13 +40,14 @@ variable "route_tables" {
 
 variable "routes" {
   description = "Route definitions"
-  type = map(object({
-    rt_name         = string
-    cidr            = string
-    gateway_id      = optional(string)
-    nat_gateway_key = optional(string)
+  type = list(object({
+    rt_name           = string
+    destination_cidr  = string
+    gateway_id        = optional(string)
+    nat_gateway_key   = optional(string)
+    transit_gateway_id = optional(string)
   }))
-  default = {}
+  default = []
 }
 
 variable "subnet_associations" {
@@ -55,4 +56,15 @@ variable "subnet_associations" {
     subnet_key      = string
     route_table_key = string
   }))
+}
+
+variable "vpc_endpoints" {
+  description = "VPC Endpoint Setting"
+  type = map(object({
+    service_name    = string
+    type            = optional(string)  # 기본값: 게이트웨이
+    subnet_keys     = optional(list(string))       # 인터페이스 엔드포인트용 서브넷 목록
+    route_table_keys = optional(list(string))      # 게이트웨이 엔드포인트용 라우트 테이블 목록
+  }))
+  default = {}
 }

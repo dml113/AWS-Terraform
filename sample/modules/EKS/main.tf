@@ -49,6 +49,15 @@ resource "aws_eks_cluster" "this" {
   }
 }
 
+resource "aws_eks_addon" "this" {
+  for_each = toset(var.eks_addons)
+
+  cluster_name = aws_eks_cluster.this.name
+  addon_name   = each.value
+
+  depends_on = [aws_eks_cluster.this]
+}
+
 resource "aws_iam_role" "eks_cluster_role" {
   name = "eks-cluster-role"
 

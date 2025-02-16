@@ -94,6 +94,7 @@ resource "aws_instance" "bastion" {
   iam_instance_profile        = aws_iam_instance_profile.bastion.name
   vpc_security_group_ids      = [aws_security_group.Bastion_Instance_SG.id]
   associate_public_ip_address = true
+  user_data              = var.user_data
 
   tags = {
     Name = var.bastion_name

@@ -1,16 +1,3 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = "ap-northeast-2"
-}
-
 ################################################################################################################################################
 #                                                                 VPC                                                                          #
 ################################################################################################################################################
@@ -48,11 +35,23 @@ module "vpc" {
   }
 
   # No additional routes are defined
-  routes = {
-    "public-rt"            = { rt_name = "public-rt", cidr = "0.0.0.0/0", gateway_id = module.vpc.igw_id }
-    "app-rt-a"             = { rt_name = "app-rt-a", cidr = "0.0.0.0/0", nat_gateway_key = "app-natgw-a" }
-    "app-rt-b"             = { rt_name = "app-rt-b", cidr = "0.0.0.0/0", nat_gateway_key = "app-natgw-a" }    
-  }
+  routes = [
+    { 
+      rt_name = "public-rt" 
+      destination_cidr = "0.0.0.0/0"
+      gateway_id = module.vpc.igw_id 
+    },
+    { 
+      rt_name = "app-rt-a" 
+      destination_cidr = "0.0.0.0/0" 
+      nat_gateway_key ="app-natgw-a"
+    },
+    { 
+      rt_name = "app-rt-b" 
+      destination_cidr = "0.0.0.0/0" 
+      nat_gateway_key ="app-natgw-b"
+    }
+  ]
 
   # Associate subnets with specific route tables
   subnet_associations = {
@@ -63,6 +62,26 @@ module "vpc" {
     "db-subnet-a"          = { subnet_key = "db-subnet-a", route_table_key = "db-rt-a" }
     "db-subnet-b"          = { subnet_key = "db-subnet-b", route_table_key = "db-rt-b" }    
   }
+  
+  # VPC endpoints are not created in this example
+  # ‼️‼️‼️ 주의사항 ‼️‼️‼️
+  # 아래 ENDPOINT는 default Security Group을 사용하므로 Inbound 수정해야 함.
+
+  # vpc_endpoints = {
+  #   "s3-endpoint" = { 
+  #     service_name     = "com.amazonaws.ap-northeast-2.s3" 
+  #     route_table_keys = ["public-rt", "app-rt-a", "app-rt-b"]
+  #   }
+  #   "dynamodb-endpoint" = { 
+  #     service_name     = "com.amazonaws.ap-northeast-2.dynamodb"
+  #     route_table_keys = ["public-rt", "app-rt-a", "app-rt-b"]
+  #   }
+  #   "ec2-endpoint" = {
+  #     service_name  = "com.amazonaws.ap-northeast-2.ec2"
+  #     type          = "Interface"
+  #     subnet_keys   = ["app-subnet-a", "app-subnet-b"]
+  #   }
+  # }
 }
 
 ################################################################################################################################################
@@ -78,6 +97,7 @@ module "ec2" {
   key_pair_name          = "bastion-key"
   iam_role_name          = "bastion-role"
   vpc_id                 = module.vpc.vpc_id
+  user_data              = filebase64("${path.module}/user_data/user_data.sh")
 }
 
 ################################################################################################################################################
@@ -96,15 +116,15 @@ provider "helm" {
   }
 }
 
-resource "helm_release" "nginx" {
-  name       = "nginx"
-  repository = "oci://registry-1.docker.io/bitnamicharts"
-  chart      = "nginx"
+# resource "helm_release" "nginx" {
+#   name       = "nginx"
+#   repository = "oci://registry-1.docker.io/bitnamicharts"
+#   chart      = "nginx"
 
-  values = [
-    file("${path.module}/helm/nginx-values.yaml")
-  ]
-}
+#   values = [
+#     file("${path.module}/helm/nginx-values.yaml")
+#   ]
+# }
 
 module "eks" {
   source = "./modules/EKS"
@@ -124,7 +144,6 @@ module "eks" {
 
   managed_node_groups = [
     {
-      name               = "app-ng"
       instance_type      = "t3.medium"
       node_name          = "app-node"
       nodegroup_name     = "app-nodegroup"
@@ -142,7 +161,27 @@ module "eks" {
         auto_scaler                  = true
       }
     }
+#     {
+#       instance_type      = "t3.small"
+#       node_name          = "clium-node"
+#       nodegroup_name     = "clium-nodegroup"
+#       desired_capacity   = 2
+#       min_size           = 2
+#       max_size           = 20
+# # AL2_x86_64 | AL2_x86_64_GPU | AL2_ARM_64 | CUSTOM | BOTTLEROCKET_ARM_64 | BOTTLEROCKET_x86_64 | BOTTLEROCKET_ARM_64_NVIDIA | BOTTLEROCKET_x86_64_NVIDIA | WINDOWS_CORE_2019_x86_64 | WINDOWS_FULL_2019_x86_64 | WINDOWS_CORE_2022_x86_64 | WINDOWS_FULL_2022_x86_64 | AL2023_x86_64_STANDARD | AL2023_ARM_64_STANDARD | AL2023_x86_64_NEURON | AL2023_x86_64_NVIDIA      
+#       ami_family         = "BOTTLEROCKET_x86_64"
+#       private_networking = true
+#       volume_type        = "gp2"
+#       volume_encrypted   = true
+#       iam_policies = {
+#         image_builder                = true
+#         aws_load_balancer_controller = true
+#         auto_scaler                  = true
+#       }
+#     }
   ]
+  
+  eks_addons = ["kube-proxy", "vpc-cni", "coredns", "eks-pod-identity-agent"]
 }
 
 # add bastion role to configmap
@@ -186,4 +225,16 @@ module "eks" {
 #     { name = "max_connections", value = "200" },
 #     { name = "innodb_buffer_pool_size", value = "536870912" }
 #   ]
+# }
+
+################################################################################################################################################
+#                                                                 ECR                                                                          #
+################################################################################################################################################
+
+# module "ecr" {
+#   source              = "./modules/ECR"
+#   repository_name     = "my-app-repo"
+#   image_tag_mutability = "IMMUTABLE"
+#   encryption_type      = "AES256"
+#   scan_on_push         = true
 # }

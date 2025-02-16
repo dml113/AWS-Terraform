@@ -13,3 +13,7 @@ output "eks_certificate_authority_data" {
 output "eks_endpoint" {
   value = aws_eks_cluster.this.endpoint
 }
+
+output "installed_eks_addons" {
+  value = [for addon in aws_eks_addon.this : addon.addon_name]
+}
