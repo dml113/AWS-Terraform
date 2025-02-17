@@ -116,15 +116,41 @@ provider "helm" {
   }
 }
 
-# resource "helm_release" "nginx" {
-#   name       = "nginx"
-#   repository = "oci://registry-1.docker.io/bitnamicharts"
-#   chart      = "nginx"
+resource "helm_release" "aws_load_balancer_controller" {
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  namespace  = "kube-system"
 
-#   values = [
-#     file("${path.module}/helm/nginx-values.yaml")
-#   ]
-# }
+  set {
+    name  = "clusterName"
+    value = module.eks.eks_cluster_name
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "false"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-load-balancer-controller"
+  }
+
+  depends_on = [
+    module.eks
+  ]
+}
+
+resource "helm_release" "nginx" {
+  name       = "nginx"
+  repository = "oci://registry-1.docker.io/bitnamicharts"
+  chart      = "nginx"
+
+  values = [
+    file("${path.module}/helm/nginx-values.yaml")
+  ]
+}
 
 module "eks" {
   source = "./modules/EKS"
