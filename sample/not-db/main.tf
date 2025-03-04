@@ -14,9 +14,7 @@ module "vpc" {
     "public-subnet-a"   = { name = "public-subnet-a", cidr = "10.0.0.0/24", az = "ap-northeast-2a", public = true }
     "public-subnet-b"   = { name = "public-subnet-b", cidr = "10.0.1.0/24", az = "ap-northeast-2b", public = true }    
     "app-subnet-a"      = { name = "app-subnet-a", cidr = "10.0.2.0/24", az = "ap-northeast-2a", public = false }
-    "app-subnet-b"      = { name = "app-subnet-b", cidr = "10.0.3.0/24", az = "ap-northeast-2b", public = false }
-    "db-subnet-a"       = { name = "db-subnet-a", cidr = "10.0.4.0/24", az = "ap-northeast-2a", public = false }
-    "db-subnet-b"       = { name = "db-subnet-b", cidr = "10.0.5.0/24", az = "ap-northeast-2b", public = false }    
+    "app-subnet-b"      = { name = "app-subnet-b", cidr = "10.0.3.0/24", az = "ap-northeast-2b", public = false } 
   }
 
   # NAT Gateway configuration is omitted since there are no public subnets
@@ -29,9 +27,7 @@ module "vpc" {
   route_tables = {
     "public-rt"         = "public-rt"
     "app-rt-a"          = "app-rt-a"
-    "app-rt-b"          = "app-rt-b"
-    "db-rt-a"           = "db-rt-a"
-    "db-rt-b"           = "db-rt-b"    
+    "app-rt-b"          = "app-rt-b"  
   }
 
   # No additional routes are defined
@@ -59,8 +55,6 @@ module "vpc" {
     "public-subnet-b"      = { subnet_key = "public-subnet-b", route_table_key = "public-rt" }
     "app-subnet-a"         = { subnet_key = "app-subnet-a", route_table_key = "app-rt-a" }
     "app-subnet-b"         = { subnet_key = "app-subnet-b", route_table_key = "app-rt-b" }
-    "db-subnet-a"          = { subnet_key = "db-subnet-a", route_table_key = "db-rt-a" }
-    "db-subnet-b"          = { subnet_key = "db-subnet-b", route_table_key = "db-rt-b" }    
   }
   
   # VPC endpoints are not created in this example
@@ -190,42 +184,6 @@ module "eks" {
     #   - system:masters
     #   rolearn: arn:aws:iam::950274644703:role/bastion-role
     #   username: bastion-user
-
-
-################################################################################################################################################
-#                                                                 RDS                                                                          #
-################################################################################################################################################
-
-# module "rds" {
-#   source = "./modules/rds"
-
-#   vpc_id             = module.vpc.vpc_id
-#   allowed_cidrs      = ["10.0.0.0/16"]
-
-#   db_identifier            = "multi-az-rds"
-#   db_engine                = "mysql"
-## aurora, aurora-mysql, aurora-postgresql, docdb, mariadb, mysql, neptune, oracle-ee, oracle-se, oracle-se1, oracle-se2, postgres, sqlserver-ee, sqlserver-ex, sqlserver-se, and sqlserver-web
-
-#   db_engine_version        = "8.0"
-#   db_instance_class        = "db.t3.medium"
-#   db_allocated_storage     = 20
-#   db_max_allocated_storage = 100
-#   multi_az                 = true
-#   db_name                  = "mydatabase"
-#   db_username              = "admin"
-#   db_password              = "SuperSecret123!"
-
-#   db_subnet_group_name     = "my-rds-subnet-group"
-#   db_parameter_group_name  = "my-rds-parameter-group"
-#   db_parameter_group_family = "mysql8.0"
-
-#   db_subnet_ids = [module.vpc.subnet_ids["db-subnet-a"], module.vpc.subnet_ids["db-subnet-b"]]
-
-#   db_parameters = [
-#     { name = "max_connections", value = "200" },
-#     { name = "innodb_buffer_pool_size", value = "536870912" }
-#   ]
-# }
 
 ################################################################################################################################################
 #                                                                 ECR                                                                          #

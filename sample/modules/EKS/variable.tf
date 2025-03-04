@@ -70,15 +70,3 @@ variable "allowed_cidrs" {
   description = "allowed cidrs"
   type        = list
 }
-
-# 기존 변수들은 그대로 유지
-
-variable "eks_cluster_name" {
-  description = "Name of the EKS cluster"
-  type        = string
-}
-
-variable "region" {
-  description = "AWS region"
-  type        = string
-}
